@@ -81,7 +81,7 @@ class CustomDataset(Dataset):
             img = self.fn_resize(img)
         if self.crop_size:
             img = self.fn_crop(img)
-        img = self.fn_totensor(img)
+        img = 2 * self.fn_totensor(img) - 1
 
         return {"image": img}
 

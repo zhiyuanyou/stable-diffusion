@@ -16,6 +16,7 @@ class AutoencoderKL(pl.LightningModule):
         embed_dim,
         ckpt_path=None,
         ignore_keys=[],
+        strict=True,
         image_key="image",
         colorize_nlabels=None,
         monitor=None,
@@ -39,9 +40,11 @@ class AutoencoderKL(pl.LightningModule):
         if monitor is not None:
             self.monitor = monitor
         if ckpt_path is not None:
-            self.init_from_ckpt(ckpt_path, ignore_keys=ignore_keys)
+            self.init_from_ckpt(ckpt_path,
+                                ignore_keys=ignore_keys,
+                                strict=strict)
 
-    def init_from_ckpt(self, path, ignore_keys=list()):
+    def init_from_ckpt(self, path, ignore_keys=list(), strict=True):
         sd = torch.load(path, map_location="cpu")["state_dict"]
         keys = list(sd.keys())
         for k in keys:
@@ -49,7 +52,7 @@ class AutoencoderKL(pl.LightningModule):
                 if k.startswith(ik):
                     print("Deleting key {} from state_dict.".format(k))
                     del sd[k]
-        self.load_state_dict(sd, strict=False)
+        self.load_state_dict(sd, strict=strict)
         print(f"Restored from {path}")
 
     def encode(self, x):

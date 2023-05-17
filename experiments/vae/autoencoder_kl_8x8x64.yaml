@@ -4,6 +4,7 @@ model:
   params:
     monitor: "val/rec_loss"
     embed_dim: 64
+    ckpt_path: /home/zyyou/stable-diffusion/pretrained_models/kl-f32.pth
     lossconfig:
       target: ldm.modules.losses.vae_loss.VAELoss
       params:
@@ -60,4 +61,4 @@ lightning:
   trainer:
     benchmark: True
     accumulate_grad_batches: 2
-    gpus: 0,
+    gpus: 0,1,
