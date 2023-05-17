@@ -8,7 +8,7 @@ model:
     lossconfig:
       target: ldm.modules.losses.vae_loss.VAELoss
       params:
-        kl_weight: 0.000001
+        kl_weight: 0.0001
     ddconfig:
       double_z: True
       z_channels: 64
