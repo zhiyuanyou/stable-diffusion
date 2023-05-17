@@ -23,7 +23,14 @@ class Resize(object):
 
 
 class CustomDataset(Dataset):
-    def __init__(self, dataroot_gt, meta_info_file=None, enlarge_ratio=1, mode="RGB", hflip=None, resize=None, crop_size=None):
+    def __init__(self,
+                 dataroot_gt,
+                 meta_info_file=None,
+                 enlarge_ratio=1,
+                 mode="RGB",
+                 hflip=None,
+                 resize=None,
+                 crop_size=None):
         super(CustomDataset, self).__init__()
         self.gt_folder = dataroot_gt
         self.meta_info_file = meta_info_file

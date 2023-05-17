@@ -1,0 +1,63 @@
+model:
+  base_learning_rate: 4.5e-6
+  target: ldm.models.vae.AutoencoderKL
+  params:
+    monitor: "val/rec_loss"
+    embed_dim: 64
+    lossconfig:
+      target: ldm.modules.losses.vae_loss.VAELoss
+      params:
+        kl_weight: 0.000001
+    ddconfig:
+      double_z: True
+      z_channels: 64
+      resolution: 256
+      in_channels: 3
+      out_ch: 3
+      ch: 128
+      ch_mult: [ 1,1,2,2,4,4]  # num_down = len(ch_mult)-1
+      num_res_blocks: 2
+      attn_resolutions: [16,8]
+      dropout: 0.0
+      permute_channel: false
+
+data:
+  target: main.DataModuleFromConfig
+  params:
+    batch_size: 12
+    wrap: True
+    num_workers: 32
+    train:
+      target: ldm.data.custom_dataset.CustomDataset
+      params:
+        dataroot_gt: /home/zyyou/datasets_bk/DIV2K/DIV2K_train_HR/
+        enlarge_ratio: 100
+        hflip: true
+        resize:
+          type: short
+          size: 320
+        crop_size: 256
+    validation:
+      target: ldm.data.custom_dataset.CustomDataset
+      params:
+        dataroot_gt: /home/zyyou/datasets_bk/DIV2K/DIV2K_train_HR/
+        enlarge_ratio: 1
+        hflip: true
+        resize:
+          type: short
+          size: 320
+        crop_size: 256
+
+lightning:
+  callbacks:
+    image_logger:
+      target: main.ImageLogger
+      params:
+        batch_frequency: 1000
+        max_images: 8
+        increase_log_steps: True
+
+  trainer:
+    benchmark: True
+    accumulate_grad_batches: 2
+    gpus: 0,
