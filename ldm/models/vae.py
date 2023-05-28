@@ -145,12 +145,14 @@ class AutoencoderKL(pl.LightningModule):
         x = x.to(self.device)
         if not only_inputs:
             xrec, posterior = self(x)
+            samples = self.decode(torch.randn_like(posterior.sample()))
             if x.shape[1] > 3:
                 # colorize with random projection
                 assert xrec.shape[1] > 3
                 x = self.to_rgb(x)
                 xrec = self.to_rgb(xrec)
-            log["samples"] = self.decode(torch.randn_like(posterior.sample()))
+                samples = self.to_rgb(samples)
+            log["samples"] = samples
             log["reconstructions"] = xrec
         log["inputs"] = x
         return log
