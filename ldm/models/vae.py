@@ -139,12 +139,15 @@ class AutoencoderKL(pl.LightningModule):
         return self.decoder.conv_out.weight
 
     @torch.no_grad()
-    def log_images(self, batch, only_inputs=False, **kwargs):
+    def log_images(self, batch, only_inputs=False, log_mean_logvar=False, **kwargs):
         log = dict()
         x = self.get_input(batch, self.image_key)
         x = x.to(self.device)
         if not only_inputs:
             xrec, posterior = self(x)
+            if log_mean_logvar:
+                mean, logvar = posterior.get_mean_logvar()
+                log["mean_logvar"] = [mean, logvar]
             samples = self.decode(torch.randn_like(posterior.sample()))
             if x.shape[1] > 3:
                 # colorize with random projection

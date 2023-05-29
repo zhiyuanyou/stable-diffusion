@@ -61,6 +61,9 @@ class DiagonalGaussianDistribution(object):
     def mode(self):
         return self.mean
 
+    def get_mean_logvar(self):
+        return self.mean, self.logvar
+
 
 def normal_kl(mean1, logvar1, mean2, logvar2):
     """

@@ -337,6 +337,29 @@ class ImageLogger(Callback):
             os.makedirs(os.path.split(path)[0], exist_ok=True)
             Image.fromarray(grid).save(path)
 
+    @rank_zero_only
+    def log_latent(self, save_dir, split, mean_logvar,
+                  global_step, current_epoch, batch_idx):
+        root = os.path.join(save_dir, "latents", split)
+        os.makedirs(root, exist_ok=True)
+        mean, logvar = mean_logvar
+        mean = mean.cpu().numpy()
+        logvar = logvar.cpu().numpy()
+
+        filename_mean = "mean_gs{:06}-e{:06}-b{:06}.npy".format(
+            global_step,
+            current_epoch,
+            batch_idx)
+        filename_logvar = "logvar_gs{:06}-e{:06}-b{:06}.npy".format(
+            global_step,
+            current_epoch,
+            batch_idx)
+
+        mean_path = os.path.join(root, filename_mean)
+        logvar_path = os.path.join(root, filename_logvar)
+        np.save(mean_path, mean)
+        np.save(logvar_path, logvar)
+
     def log_img(self, pl_module, batch, batch_idx, split="train"):
         check_idx = batch_idx if self.log_on_batch_idx else pl_module.global_step
         if (self.check_frequency(check_idx) and  # batch_idx % self.batch_freq == 0
@@ -352,6 +375,7 @@ class ImageLogger(Callback):
             with torch.no_grad():
                 images = pl_module.log_images(batch, split=split, **self.log_images_kwargs)
 
+            mean_logvar = images.pop("mean_logvar", None)
             for k in images:
                 N = min(images[k].shape[0], self.max_images)
                 images[k] = images[k][:N]
@@ -363,6 +387,10 @@ class ImageLogger(Callback):
             self.log_local(pl_module.logger.save_dir, split, images,
                            pl_module.global_step, pl_module.current_epoch, batch_idx)
 
+            if mean_logvar:
+                self.log_latent(pl_module.logger.save_dir, split, mean_logvar,
+                                pl_module.global_step, pl_module.current_epoch, batch_idx)
+
             logger_log_images = self.logger_log_images.get(logger, lambda *args, **kwargs: None)
             logger_log_images(pl_module, images, pl_module.global_step, split)
 
@@ -371,7 +399,7 @@ class ImageLogger(Callback):
 
     def check_frequency(self, check_idx):
         if ((check_idx % self.batch_freq) == 0 or (check_idx in self.log_steps)) and (
-                check_idx > 0 or self.log_first_step):
+                check_idx >= 0 or self.log_first_step):
             try:
                 self.log_steps.pop(0)
             except IndexError as e:
@@ -385,7 +413,7 @@ class ImageLogger(Callback):
             self.log_img(pl_module, batch, batch_idx, split="train")
 
     def on_validation_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx):
-        if not self.disabled and pl_module.global_step > 0:
+        if not self.disabled and pl_module.global_step >= 0:
             self.log_img(pl_module, batch, batch_idx, split="val")
         if hasattr(pl_module, 'calibrate_grad_norm'):
             if (pl_module.calibrate_grad_norm and batch_idx % 25 == 0) and batch_idx > 0:
@@ -721,7 +749,7 @@ if __name__ == "__main__":
                 melk()
                 raise
         if not opt.no_test and not trainer.interrupted:
-            trainer.test(model, data)
+            trainer.validate(model, data)
     except Exception:
         if opt.debug and trainer.global_rank == 0:
             try:
