@@ -25,9 +25,9 @@ model:
 data:
   target: main.DataModuleFromConfig
   params:
-    batch_size: 12
+    batch_size: 16
     wrap: True
-    num_workers: 32
+    num_workers: 8
     train:
       target: ldm.data.custom_dataset.CustomDataset
       params:
@@ -54,11 +54,14 @@ lightning:
     image_logger:
       target: main.ImageLogger
       params:
-        batch_frequency: 1000
+        batch_frequency: 2500
         max_images: 8
         increase_log_steps: True
+        log_images_kwargs:
+          log_mean_logvar: false
 
   trainer:
     benchmark: True
     accumulate_grad_batches: 2
-    gpus: 0,1,
+    gpus: 0,1, # for val, must be 1 GPU: 0,
+    max_epochs: 200
